@@ -1,0 +1,3 @@
+[submodule "samples/php/laravel5-example"]
+	path = samples/php/laravel5-example
+	url = https://github.com/bestmomo/laravel5-example.git
