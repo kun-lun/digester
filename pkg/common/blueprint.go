@@ -13,7 +13,7 @@ type NonInfra struct {
 }
 
 type Infra struct {
-    Size string
+    Size InfraSize
 }
 
 type Blueprint struct {
@@ -46,7 +46,7 @@ func (b Blueprint) ExposeYaml(filePath string) error {
     bpfy := blueprintForYaml{
         ProjectPath: b.NonInfra.ProjectPath,
         ProgrammingLanguage: string(b.NonInfra.ProgrammingLanguage),
-        VMGroupSize: b.Infra.Size,
+        VMGroupSize: string(b.Infra.Size),
     }
     // TODO support more. Assume at most one database for now.
     if len(b.NonInfra.Databases) > 0 {
@@ -74,8 +74,12 @@ func ImportBlueprintYaml(filePath string) (Blueprint, error) {
     }
 
     bp.Infra = Infra{
-        Size:  bpfy.VMGroupSize,
     }
+    bp.Infra.Size, err = ParseInfraSize(bpfy.VMGroupSize)
+    if err != nil {
+        return bp, err
+    }
+
     bp.NonInfra = NonInfra{
         ProjectPath: bpfy.ProjectPath,
     }
