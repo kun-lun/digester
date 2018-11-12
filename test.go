@@ -4,21 +4,17 @@ import (
     "fmt"
     "log"
 
-    "github.com/kun-lun/digester/pkg/questionnaire"
+    "github.com/kun-lun/digester/pkg/apis"
 )
 
 // For manual test
 func main() {
-    bp := questionnaire.Run()
-    fmt.Printf("%#v\n", bp)
-    if err := bp.ExposeYaml("questionnaire.yml"); err != nil {
+    if err := apis.Run("questionnaire.yml"); err != nil {
         log.Fatal(err)
     }
-    /*
-    if err := bp.ImportYaml("questionnaire.yml"); err != nil {
+    if bp, err := apis.ImportBlueprintYaml("questionnaire.yml"); err != nil {
         log.Fatal(err)
     } else {
         fmt.Printf("%#v\n", bp)
     }
-    */
 }
