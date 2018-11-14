@@ -10,7 +10,7 @@
     "storage",
   ]
   pruneopts = "UT"
-  revision = "11580d80d8ecaebf40fc4aee67d8f882ef7ed48b"
+  revision = "cf5765a53f83c9cd20042875e21df63933a28a20"
 
 [[projects]]
   branch = "master"
