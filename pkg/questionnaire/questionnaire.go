@@ -18,8 +18,11 @@ var (
 	scanner = bufio.NewScanner(os.Stdin)
 )
 
+// TODO need a function to construct Q&A
+
 func Run(state storage.State, filePath string) common.Blueprint {
     var err error
+	var doFlag bool
     bp, _ := common.ImportBlueprintYaml(filePath)
 
 	fmt.Printf("Project path?")
@@ -91,21 +94,26 @@ func Run(state storage.State, filePath string) common.Blueprint {
 
 	// Ask for the empty fields
 	bpNonInfra := &bp.NonInfra
-	fmt.Printf("What's the programming language?")
-
-    if bpNonInfra.ProgrammingLanguage != "" {
-        fmt.Printf(" Default: %s.", bpNonInfra.ProgrammingLanguage)
-    }
-    fmt.Printf(" Allowed values: {php}.\n")
-	scanner.Scan()
-	input := scanner.Text()
-    if input != "" {
-    	pl, err := common.ParseProgrammingLanguage(input)
-    	if err != nil {
-    		log.Fatal(err)
-    	}
-    	bpNonInfra.ProgrammingLanguage = pl
-    }
+	doFlag = true
+	for ; doFlag; {
+		doFlag = false
+		fmt.Printf("What's the programming language?")
+	    if bpNonInfra.ProgrammingLanguage != "" {
+	        fmt.Printf(" Default: %s.", bpNonInfra.ProgrammingLanguage)
+	    }
+	    fmt.Printf(" Allowed values: {php}.\n")
+		scanner.Scan()
+		input := scanner.Text()
+	    if input != "" {
+	    	pl, err := common.ParseProgrammingLanguage(input)
+	    	if err != nil {
+	    		fmt.Println(err)
+				doFlag = true
+				continue
+	    	}
+	    	bpNonInfra.ProgrammingLanguage = pl
+	    }
+	}
 
 	if len(bpNonInfra.Databases) > 0 {
 		needExtraInfo := false
@@ -139,28 +147,35 @@ func Run(state storage.State, filePath string) common.Blueprint {
 		}
 	}
 
-	if len(bpNonInfra.Databases) > 0 {
-		fmt.Println("Do you use any more databases? How many? Default: 0. Allowed values: {n | n >= 0}.")
-	} else {
-		fmt.Println("Do you use any databases? How many? Default: 0. Allowed values: {n | n >= 0}.")
+	extraDatabasesNum := 0
+	doFlag = true
+	for ; doFlag; {
+		doFlag = false
+		if len(bpNonInfra.Databases) > 0 {
+			fmt.Println("Do you use any more databases? How many? Default: 0. Allowed values: {n | n >= 0}.")
+		} else {
+			fmt.Println("Do you use any databases? How many? Default: 0. Allowed values: {n | n >= 0}.")
+		}
+		scanner.Scan()
+		input := scanner.Text()
+	    if input != "" {
+	    	extraDatabasesNum, err = strconv.Atoi(input)
+	    	if err != nil {
+	    		fmt.Println(err)
+				doFlag = true
+				continue
+	    	}
+	    }
 	}
-	scanner.Scan()
-	input = scanner.Text()
-    if input != "" {
-    	extraDatabasesNum, err := strconv.Atoi(input)
-    	if err != nil {
-    		log.Fatal(err)
-    	}
-    	for i := 1; i <= extraDatabasesNum; i++ {
-    		newDb := common.Database{}
-    		askForDbEmptyFields(len(bpNonInfra.Databases)+1, &newDb)
-    		bpNonInfra.Databases = append(bpNonInfra.Databases, newDb)
-    	}
-    }
+	for i := 1; i <= extraDatabasesNum; i++ {
+		newDb := common.Database{}
+		askForDbEmptyFields(len(bpNonInfra.Databases)+1, &newDb)
+		bpNonInfra.Databases = append(bpNonInfra.Databases, newDb)
+	}
 
 	// Ask for Misc
 	if bp.Misc.ResourceGroupName == "" {
-        bp.Misc.ResourceGroupName = "kl-" + state.EnvID
+        bp.Misc.ResourceGroupName = state.EnvID
     }
 	s := reflect.ValueOf(&bp.Misc).Elem()
 	for i := 0; i < s.NumField(); i++ {
@@ -178,23 +193,28 @@ func Run(state storage.State, filePath string) common.Blueprint {
             } else {
                 defaultVal = val
             }
-    		fmt.Printf(
-    			"%s Default: %d.\n",
-    			tag.Get("question"),
-    			defaultVal,
-    		)
-    		scanner.Scan()
-    		input := scanner.Text()
-
-            if input == "" {
-        		valField.Set(reflect.ValueOf(defaultVal))
-            } else {
-                inputToInt, err := strconv.Atoi(input)
-        		if err != nil {
-        			log.Fatal(err)
-        		}
-        		valField.Set(reflect.ValueOf(inputToInt))
-            }
+			doFlag = true
+			for ; doFlag; {
+				doFlag = false
+				fmt.Printf(
+	    			"%s Default: %d.\n",
+	    			tag.Get("question"),
+	    			defaultVal,
+	    		)
+	    		scanner.Scan()
+	    		input := scanner.Text()
+	            if input == "" {
+	        		valField.Set(reflect.ValueOf(defaultVal))
+	            } else {
+	                inputToInt, err := strconv.Atoi(input)
+	        		if err != nil {
+	        			fmt.Println(err)
+						doFlag = true
+						continue
+	        		}
+	        		valField.Set(reflect.ValueOf(inputToInt))
+	            }
+			}
         } else {
             val := valField.Interface().(string)
             var defaultVal string
@@ -238,16 +258,22 @@ func askForDbEmptyFields(num int, db *common.Database) {
 			allowedSentence = fmt.Sprintf(" Allowed values: %s.", tag.Get("allow"))
 		}
 		if val == reflect.Zero(valField.Type()).Interface() {
-			fmt.Printf(
-				"For the database No.%d: %s%s\n",
-				num,
-				tag.Get("question"),
-				allowedSentence,
-			)
-			scanner.Scan()
-			input := scanner.Text()
-			if err := db.ValidateField(typeField.Name, input, &valField); err != nil {
-				log.Fatal(err)
+			doFlag := true
+			for ; doFlag; {
+				doFlag = false
+				fmt.Printf(
+					"For the database No.%d: %s%s\n",
+					num,
+					tag.Get("question"),
+					allowedSentence,
+				)
+				scanner.Scan()
+				input := scanner.Text()
+				if err := db.ValidateField(typeField.Name, input, &valField); err != nil {
+					fmt.Println(err)
+					doFlag = true
+					continue
+				}
 			}
 		}
 	}
