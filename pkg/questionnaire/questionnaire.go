@@ -3,14 +3,17 @@ package questionnaire
 import (
 	"bufio"
 	"fmt"
+
 	"github.com/kun-lun/common/storage"
 	"github.com/kun-lun/digester/pkg/common"
+
 	//"github.com/kun-lun/digester/pkg/detector"
-	"github.com/kun-lun/digester/pkg/vmgroupcalc"
 	"log"
 	"os"
 	"reflect"
 	"strconv"
+
+	"github.com/kun-lun/digester/pkg/vmgroupcalc"
 	//"strings"
 )
 
@@ -26,71 +29,70 @@ func Run(state storage.State, filePath string) common.Blueprint {
     bp, _ := common.ImportBlueprintYaml(filePath)
 
 	fmt.Printf("Project path?")
-    if bp.NonInfra.ProjectPath != "" {
-        fmt.Printf(" Default: %s.", bp.NonInfra.ProjectPath)
+    if bp.NonInfra.ProjectSourceCodePath != "" {
+        fmt.Printf(" Default: %s.", bp.NonInfra.ProjectSourceCodePath)
     }
     fmt.Printf("\n")
 	scanner.Scan()
 	path := scanner.Text()
-    if path != "" {
-        bp.NonInfra.ProjectPath = path
-    }
-    /*
-	d, err := detector.New(path)
-	if err != nil {
-		log.Fatal(err)
+	if path != "" {
+		bp.NonInfra.ProjectSourceCodePath = path
 	}
-
-
-	possiblePackageManagers := d.DetectPackageManager()
-	fmt.Printf("What is the package manager for the project?")
-	for i, pm := range possiblePackageManagers {
-		if i == 0 {
-			fmt.Printf(" %s \\", strings.ToUpper(string(pm)))
-		} else {
-			fmt.Printf(" %s \\", string(pm))
+	/*
+		d, err := detector.New(path)
+		if err != nil {
+			log.Fatal(err)
 		}
-	}
-	if len(possiblePackageManagers) > 0 {
-		fmt.Printf(" other?\n")
-	} else {
-		fmt.Printf("\n")
-	}
-	scanner.Scan()
-	inputPackageManager := scanner.Text()
-	if inputPackageManager == "" {
-		inputPackageManager = string(possiblePackageManagers[0])
-	}
-	d.ConfirmPackageManager(inputPackageManager)
 
-	possibleFrameworks := d.DetectFramework()
-	fmt.Printf("What is the framework of the project?")
-	for i, fw := range possibleFrameworks {
-		if i == 0 {
-			fmt.Printf(" %s \\", strings.ToUpper(string(fw)))
-		} else {
-			fmt.Printf(" %s \\", string(fw))
+
+		possiblePackageManagers := d.DetectPackageManager()
+		fmt.Printf("What is the package manager for the project?")
+		for i, pm := range possiblePackageManagers {
+			if i == 0 {
+				fmt.Printf(" %s \\", strings.ToUpper(string(pm)))
+			} else {
+				fmt.Printf(" %s \\", string(pm))
+			}
 		}
-	}
-	if len(possibleFrameworks) > 0 {
-		fmt.Printf(" other?\n")
-	} else {
-		fmt.Printf(" NONE?\n")
-	}
-	scanner.Scan()
-	inputFramework := scanner.Text()
-	if inputFramework == "" {
+		if len(possiblePackageManagers) > 0 {
+			fmt.Printf(" other?\n")
+		} else {
+			fmt.Printf("\n")
+		}
+		scanner.Scan()
+		inputPackageManager := scanner.Text()
+		if inputPackageManager == "" {
+			inputPackageManager = string(possiblePackageManagers[0])
+		}
+		d.ConfirmPackageManager(inputPackageManager)
+
+		possibleFrameworks := d.DetectFramework()
+		fmt.Printf("What is the framework of the project?")
+		for i, fw := range possibleFrameworks {
+			if i == 0 {
+				fmt.Printf(" %s \\", strings.ToUpper(string(fw)))
+			} else {
+				fmt.Printf(" %s \\", string(fw))
+			}
+		}
 		if len(possibleFrameworks) > 0 {
-			inputFramework = string(possibleFrameworks[0])
+			fmt.Printf(" other?\n")
+		} else {
+			fmt.Printf(" NONE?\n")
 		}
-	}
-	d.ConfirmFramework(inputFramework)
+		scanner.Scan()
+		inputFramework := scanner.Text()
+		if inputFramework == "" {
+			if len(possibleFrameworks) > 0 {
+				inputFramework = string(possibleFrameworks[0])
+			}
+		}
+		d.ConfirmFramework(inputFramework)
 
-	d.DetectConfig()
+		d.DetectConfig()
 
-	bp = d.ExposeKnownInfo()
-    */
-
+		bp = d.ExposeKnownInfo()
+	*/
 
 	// Ask for the empty fields
 	bpNonInfra := &bp.NonInfra
@@ -126,11 +128,11 @@ func Run(state storage.State, filePath string) common.Blueprint {
 				typeField := s.Type().Field(j)
 				tag := typeField.Tag
 				val := valField.Interface()
-                if valField.Kind() == reflect.Int {
-    				fmt.Printf("  %s: %d\n", tag.Get("name"), val)
-                } else {
-                    fmt.Printf("  %s: %s\n", tag.Get("name"), val)
-                }
+				if valField.Kind() == reflect.Int {
+					fmt.Printf("  %s: %d\n", tag.Get("name"), val)
+				} else {
+					fmt.Printf("  %s: %s\n", tag.Get("name"), val)
+				}
 				if val == reflect.Zero(valField.Type()).Interface() {
 					needExtraInfo = true
 				}
@@ -239,7 +241,7 @@ func Run(state storage.State, filePath string) common.Blueprint {
         }
 	}
 
-    bp.Infra = vmgroupcalc.Calc(vmgroupcalc.Requirment{
+	bp.Infra = vmgroupcalc.Calc(vmgroupcalc.Requirment{
 		ConcurrentUserNumber: bp.Misc.ConcurrentUserNumber,
 	})
 
